@@ -7,3 +7,4 @@ requests
 Flask-Mail==0.10.0
 bcrypt
 gunicorn
+python-docx
