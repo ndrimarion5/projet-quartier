@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Ménages — Annuaire du Quartier{% endblock %}
+
+{% block page_title %}Ménages{% endblock %}
+
+{% block breadcrumb %}
+<div class="header-breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Accueil</a>
+  <span class="sep">›</span>
+  <span>Ménages</span>
+</div>
+{% endblock %}
+
+{% block header_actions %}
+{% if session.role in ['admin','agent'] %}
+  <a href="{{ url_for('menage_add') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Ajouter un ménage</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<!-- Recherche -->
+<div class="card mb-6">
+  <div class="card-body">
+    <form method="GET" class="search-bar advanced">
+      <div class="search-input-wrapper">
+        <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input type="text" name="q" value="{{ q }}"
+               placeholder="Adresse ou secteur"
+               class="form-control search-input">
+      </div>
+      <select name="secteur" class="filter-select">
+        <option value="">Tous les secteurs</option>
+        {% for item in secteurs %}
+          <option value="{{ item }}" {% if secteur == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+      <input type="number" name="revenu_min" value="{{ revenu_min }}" min="0" class="filter-select" placeholder="Revenu min">
+      <input type="number" name="revenu_max" value="{{ revenu_max }}" min="0" class="filter-select" placeholder="Revenu max">
+      <input type="number" name="score_min" value="{{ score_min }}" min="0" max="100" class="filter-select" placeholder="Score min">
+      <input type="number" name="score_max" value="{{ score_max }}" min="0" max="100" class="filter-select" placeholder="Score max">
+      <input type="number" name="taille_min" value="{{ taille_min }}" min="0" class="filter-select" placeholder="Membres min">
+      <input type="number" name="taille_max" value="{{ taille_max }}" min="0" class="filter-select" placeholder="Membres max">
+      <label class="check-filter">
+        <input type="checkbox" name="sans_chef" value="1" {% if sans_chef %}checked{% endif %}>
+        Sans chef
+      </label>
+      <button type="submit" class="btn btn-primary">Rechercher</button>
+      {% if q or secteur or revenu_min or revenu_max or score_min or score_max or taille_min or taille_max or sans_chef %}
+        <a href="{{ url_for('menages_list') }}" class="btn btn-secondary"><i class="fa-solid fa-filter-circle-xmark"></i> Effacer</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title"><i class="fa-solid fa-house"></i> {{ menages|length }} ménage(s)</span>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>id</th>
+          <th>Chef ménage</th>
+          <th>Adresse</th>
+          <th>Secteur</th>
+          <th>Membres</th>
+          <th>Revenu mensuel</th>
+          <th>Score</th>
+          <th>Actions</th>
+        </tr> 
+      </thead>
+      <tbody>
+        {% for m in menages %}
+        <tr>
+          <td class="text-muted text-sm">{{ m.id_menage }}</td>
+
+          <td>
+            <a href="{{ url_for('menage_detail', id=m.id_menage) }}" class="text-orange font-bold">
+              {% if m.chef_nom %}
+                {{ m.chef_prenom }} {{ m.chef_nom }}
+              {% else %}
+            </a>  
+                <span class="text-muted">—</span>
+              {% endif %}
+          </td>
+          <td>
+            
+              {{ m.adresse or '—' }}
+            
+          </td>
+          <td>{{ m.secteur or '—' }}</td>
+
+          <td>
+            <span class="badge badge-blue">{{ m.nb_membres }} membre(s)</span>
+          </td>
+          <td>
+            {{ '{:,.0f} FCFA'.format(m.revenu) if m.revenu else '—' }}
+          </td>
+          <td>
+            <span class="badge {% if m.score_vulnerabilite and m.score_vulnerabilite >= 70 %}badge-orange{% else %}badge-green{% endif %}">
+              {{ m.score_vulnerabilite or 0 }}
+            </span>
+          </td>
+          <td>
+            <div class="d-flex gap-2">
+              <a href="{{ url_for('menage_detail', id=m.id_menage) }}"
+                 class="btn btn-secondary btn-sm btn-icon" title="Voir"><i class="fa-solid fa-eye"></i></a>
+              {% if session.role in ['admin','agent'] %}
+              <a href="{{ url_for('menage_edit', id=m.id_menage) }}"
+                 class="btn btn-outline btn-sm btn-icon" title="Modifier"><i class="fa-solid fa-pen"></i></a>
+              {% endif %}
+              {% if session.role == 'admin' %}
+              <form method="POST" action="{{ url_for('menage_delete', id=m.id_menage) }}"
+                    class="confirm-delete" data-name="le ménage {{ m.adresse }}">
+                <button type="submit" class="btn btn-danger btn-sm btn-icon" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="table-empty">
+            Aucun ménage enregistré.
+            {% if session.role in ['admin','agent'] %}
+              <a href="{{ url_for('menage_add') }}" class="text-orange">Ajouter le premier ménage →</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

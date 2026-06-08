@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Annuaire du Quartier{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+</head>
+<body>
+
+<!-- Mobile menu toggle -->
+<button class="menu-toggle" onclick="toggleSidebar()" aria-label="Ouvrir le menu">
+  <i class="fa-solid fa-bars"></i>
+</button>
+
+<div class="app-layout">
+
+  <!-- ── Sidebar ──────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon"></div>
+      <div>
+        <div class="brand-name">ANNUAIRE STATISTIQUES</div>
+        <div class="brand-sub">Danga, Abidjan</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+
+      <div class="nav-section">
+        <a href="{{ url_for('accueil') }}"
+           class="nav-link {% if request.endpoint == 'accueil' %}active{% endif %}">
+            <i class="fa-solid fa-house-chimney"></i> Accueil
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Principal</div>
+        <a href="{{ url_for('dashboard') }}"
+           class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+            <i class="fa-solid fa-gauge"></i> Tableau de bord
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Données</div>
+        <a href="{{ url_for('habitants_list') }}"
+           class="nav-link {% if 'habitant' in (request.endpoint or '') %}active{% endif %}">
+          <i class="fa-solid fa-users"></i>  Habitants
+        </a>
+        <a href="{{ url_for('menages_list') }}"
+           class="nav-link {% if 'menage' in (request.endpoint or '') %}active{% endif %}">
+          <i class="fa-solid fa-house"></i>  Ménages
+        </a>
+        {% if session.role in ['admin','agent'] %}
+        <a href="{{ url_for('import_habitants') }}"
+           class="nav-link {% if request.endpoint == 'import_habitants' %}active{% endif %}">
+          <i class="fa-solid fa-file-import"></i>  Import de données
+        </a>
+        {% endif %}
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Événements</div>
+        <a href="{{ url_for('evenements_list') }}"
+           class="nav-link {% if 'evenement' in (request.endpoint or '') %}active{% endif %}">
+          <i class="fa-solid fa-heart-pulse"></i>  Événements vitaux
+        </a>
+        <a href="{{ url_for('mouvements_list') }}"
+           class="nav-link {% if 'mouvement' in (request.endpoint or '') %}active{% endif %}">
+          <i class="fa-solid fa-arrows-rotate"></i>  Mouvements
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Analyses</div>
+        <a href="{{ url_for('rapports') }}"
+           class="nav-link {% if request.endpoint == 'rapports' %}active{% endif %}">
+          <i class="fa-solid fa-chart-column"></i>  Rapports &amp; Stats
+        </a>
+
+        <a href="{{ url_for('carte') }}"
+          class="nav-link {% if request.endpoint == 'carte' %}active{% endif %}">
+          <i class="fa-solid fa-map-location-dot"></i> Cartographie
+        </a>
+        {% if session.role in ['admin','responsable','agent'] %}
+        <a href="{{ url_for('qualite_donnees') }}"
+           class="nav-link {% if request.endpoint == 'qualite_donnees' %}active{% endif %}">
+          <i class="fa-solid fa-shield-halved"></i> Qualité des données
+        </a>
+        {% endif %}
+      </div>
+
+      {% if session.role in ['admin', 'responsable'] %}
+      <div class="nav-section">
+        <div class="nav-section-title">Administration</div>
+        <a href="{{ url_for('historique') }}"
+           class="nav-link {% if request.endpoint == 'historique' %}active{% endif %}">
+          <i class="fa-solid fa-arrow-rotate-left"></i>  Historique
+        </a>
+        {% if session.role == 'admin' %}
+        <a href="{{ url_for('parametres') }}"
+           class="nav-link {% if request.endpoint == 'parametres' %}active{% endif %}">
+          <i class="fa-solid fa-gear"></i>  Paramètres
+        </a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if session.role in ['admin', 'responsable'] %}
+      <div class="nav-section">
+        <div class="nav-section-title">Exports</div>
+        <a href="{{ url_for('export_rapport') }}" class="nav-link">
+          <i class="fa-solid fa-download"></i>  Fichier Excel complet
+        </a>
+      </div>
+      {% endif %}
+
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-avatar">{{ (session.user or 'U')[0].upper() }}</div>
+      <div>
+        <div class="user-name">{{ session.user }}</div>
+        <div class="user-role">{{ session.label }}</div>
+      </div>
+      <a href="{{ url_for('logout') }}" class="logout-btn" title="Déconnexion">
+        <i class="fa-solid fa-power-off"></i>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ── Main Content ──────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- HEADER GLOBAL (design de référence) -->
+    <div class="global-header">
+      <div class="header-overlay"></div>
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-main-title">{% block page_title %}Annuaire Statistique{% endblock %}</h1>
+          {% block breadcrumb %}{% endblock %}
+        </div>
+        <div class="header-right">
+          <button type="button" class="theme-toggle" onclick="toggleTheme()" title="Changer le thème" aria-label="Changer le thème">
+            <i class="fa-solid fa-circle-half-stroke"></i>
+          </button>
+          {% block header_actions %}{% endblock %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Zone de contenu avec padding uniforme -->
+    <div class="content-body">
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-container">
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">
+                <span>{{ message }}</span>
+                <button onclick="this.parentElement.remove()" aria-label="Fermer">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+
+    </div><!-- /.content-body -->
+
+  </main>
+</div>
+
+<footer class="main-footer">
+  <div class="footer-container">
+    <!-- Logo -->
+    <div class="footer-section footer-logo-section">
+      <h3>Côte d'Ivoire</h3>
+      <img src="/static/images/emb_img.png" alt="Logo" class="footer-logo">
+      <p><i class="fa-solid fa-phone"> </i> +225-0141961330</p>
+      
+    </div>
+    <!-- Quartier -->
+    <div class="footer-section">
+      <h3> Application </h3>
+      <p>Plateforme numérique de gestion et d'information du quartier Danga.</p>
+      <p> <i class="fa-brands fa-whatsapp"></i>    +226-0546540228</p>
+      
+    </div>
+    <!-- Informations -->
+    <div class="footer-section">
+      <h3>Quartier Danga</h3>
+      <p>Commune : Cocody</p>
+      <p>Ville : Abidjan</p>
+      <p>Pays : Côte d'Ivoire</p>      
+    </div>
+    <!-- Liens -->
+    <div class="footer-section">
+      <h3>Liens utiles</h3>
+      <a href="https://www.gouv.ci" target="_blank"> › Site officiel de la Côte d'Ivoire</a>
+      <a href="https://mapcarta.com/fr/17536312"> › Danga sur la carte</a>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+      <a class="email-link"
+        href="mailto:Danga@email.com?subject=Demande d'information&body=Bonjour,">
+        <i class="fa-solid fa-envelope"></i>
+        contact@email.com
+      </a>
+
+    </div>
+  </div>
+  <div class="footer-bottom">
+    © 2026 Quartier Danga — Tous droits réservés.
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

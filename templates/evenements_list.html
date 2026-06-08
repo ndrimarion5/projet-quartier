@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Événements vitaux — Annuaire du Quartier{% endblock %}
+
+{% block page_title %}Événements vitaux{% endblock %}
+
+{% block breadcrumb %}
+<div class="header-breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Accueil</a>
+  <span class="sep">›</span>
+  <span>Événements vitaux</span>
+</div>
+{% endblock %}
+
+{% block header_actions %}
+{% if session.role in ['admin','agent'] %}
+  <a href="{{ url_for('evenement_add') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Enregistrer un événement</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<!-- Filtres -->
+<div class="card mb-6">
+  <div class="card-body">
+    <form method="GET" class="search-bar advanced">
+      <div class="search-input-wrapper">
+        <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input type="text" name="q" value="{{ q }}" class="form-control search-input"
+               placeholder="Habitant ou description">
+      </div>
+      <select name="type" class="filter-select">
+        <option value="">Tous les types</option>
+        <option value="naissance" {% if type_f == 'naissance' %}selected{% endif %}>Naissances</option>
+        <option value="deces"     {% if type_f == 'deces'     %}selected{% endif %}>Décès</option>
+        <option value="autre"     {% if type_f == 'autre'     %}selected{% endif %}>Autre</option>
+      </select>
+      <input type="date" name="date_debut" value="{{ date_debut }}" class="filter-select">
+      <input type="date" name="date_fin" value="{{ date_fin }}" class="filter-select">
+      <button type="submit" class="btn btn-primary">Filtrer</button>
+      {% if type_f or q or date_debut or date_fin %}
+        <a href="{{ url_for('evenements_list') }}" class="btn btn-secondary"><i class="fa-solid fa-filter-circle-xmark"></i> Effacer</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title"><i class="fa-solid fa-heart-pulse"></i> {{ evenements|length }} événement(s)</span>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Type</th>
+          <th>Habitant concerné</th>
+          <th>Date</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for evt in evenements %}
+        <tr>
+          <td class="text-muted text-sm">{{ evt.id_evenement }}</td>
+          <td>
+            {% if evt.type_evenement == 'naissance' %}
+              <span class="badge badge-green"><i class="fa-solid fa-baby"></i> Naissance</span>
+            {% elif evt.type_evenement == 'deces' %}
+              <span class="badge badge-red"><i class="fa-solid fa-cross"></i> Décès</span>
+            {% else %}
+              <span class="badge badge-blue">{{ evt.type_evenement | capitalize }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{{ url_for('habitant_detail', id=evt.id_habitant) }}" class="text-orange font-bold">
+              {{ evt.prenom }} {{ evt.nom }}
+            </a>
+          </td>
+          <td class="text-sm">
+            {{ evt.date_evenement.strftime('%d/%m/%Y') if evt.date_evenement else '—' }}
+          </td>
+          <td class="text-muted text-sm">{{ evt.description or '—' }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="table-empty">
+            Aucun événement enregistré.
+            {% if session.role in ['admin','agent'] %}
+            <a href="{{ url_for('evenement_add') }}" class="text-orange">Enregistrer le premier →</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

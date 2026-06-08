@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Ajouter un habitant — Annuaire du Quartier{% endblock %}
+
+{% block page_title %}Ajouter un habitant{% endblock %}
+
+{% block breadcrumb %}
+<div class="header-breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Accueil</a>
+  <span class="sep">›</span>
+  <a href="{{ url_for('habitants_list') }}">Habitants</a>
+  <span class="sep">›</span>
+  <span>Ajouter</span>
+</div>
+{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('habitants_list') }}" class="btn btn-secondary"> Retour</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width:860px;">
+  <div class="card-header">
+    <span class="card-title"><i class="fa-solid fa-user"></i>Informations personnelles</span>
+  </div>
+  <div class="card-body">
+    <form method="POST">
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Nom <span class="req">*</span></label>
+          <input type="text" name="nom" class="form-control"
+                 placeholder="Nom de famille" required style="text-transform:uppercase;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Prénom <span class="req">*</span></label>
+          <input type="text" name="prenom" class="form-control" placeholder="Prénom(s)" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Sexe <span class="req">*</span></label>
+          <select name="sexe" class="form-control" required>
+            <option value="">— Sélectionner —</option>
+            <option value="Masculin">Masculin</option>
+            <option value="Féminin">Féminin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date de naissance</label>
+          <input type="date" name="date_de_naissance" class="form-control"
+                 max="{{ today }}">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Profession</label>
+          <input type="text" name="profession" class="form-control"
+                 placeholder="Ex: Commerçant, Enseignant…">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Niveau d'étude</label>
+          <select name="niveau_etude" class="form-control">
+            <option value="">— Sélectionner —</option>
+            <option value="Aucun">Aucun</option>
+            <option value="Primaire">Primaire</option>
+            <option value="Secondaire">Secondaire (Collège)</option>
+            <option value="Lycée">Lycée / Terminale</option>
+            <option value="BTS/DUT">BTS / DUT</option>
+            <option value="Licence">Licence (Bac+3)</option>
+            <option value="Master">Master (Bac+5)</option>
+            <option value="Doctorat">Doctorat</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Téléphone</label>
+          <input type="tel" name="telephone" class="form-control"
+                 placeholder="Ex: +225 07 XX XX XX XX">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Ménage de rattachement</label>
+          <select name="id_menage" class="form-control">
+            <option value="">— Aucun ménage —</option>
+            
+            {% for m in menages %}
+            <option value="{{ m.id_menage }}"
+              {% if id_menage_preselect and id_menage_preselect|int == m.id_menage %}selected{% endif %}>
+              {{ m.adresse }}
+            </option>
+            
+            {% endfor %}
+          </select>
+          <div class="form-hint">
+            Pas de ménage ? <a href="{{ url_for('menage_add') }}" class="text-orange">Créer un ménage →</a>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Lien avec le chef de ménage</label>
+          <select name="lien_avec_chef" class="form-control" required>
+            <option value="">— Sélectionner —</option>
+            <option value="Chef de ménage">Chef de ménage</option>
+            <option value="Épouse / Conjointe">Épouse / Conjointe</option>
+            <option value="Époux / Conjoint">Époux / Conjoint</option>
+            <option value="Enfant">Enfant</option>
+            <option value="Père / Mère">Père / Mère</option>
+            <option value="Frère / Sœur">Frère / Sœur</option>
+            <option value="Petit-fils / Petite-fille">Petit-fils / Petite-fille</option>
+            <option value="Autre parent">Autre parent</option>
+            <option value="Domestique">Domestique</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Enregistrer l'habitant</button>
+        <a href="{{ url_for('habitants_list') }}" class="btn btn-secondary">Annuler</a>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+{% endblock %}

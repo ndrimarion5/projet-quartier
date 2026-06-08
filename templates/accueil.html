@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% block title %}Accueil — Quartier Danga{% endblock %}
+
+{% block page_title %}Bienvenue à Danga{% endblock %}
+
+{% block breadcrumb %}
+<div class="header-breadcrumb">
+  <span>Accueil</span>
+</div>
+{% endblock %}
+
+{% block header_actions %}
+<span style="color:rgba(255,255,255,.85); font-size:.85rem;">
+  <i class="fa-solid fa-location-dot"></i>&nbsp; Cocody · Abidjan · Côte d'Ivoire
+</span>
+{% endblock %}
+
+{% block content %}
+
+<!-- ══════════════════════════════════════════════
+     CAROUSEL
+══════════════════════════════════════════════ -->
+<div class="carousel-wrapper">
+  <div class="carousel" id="mainCarousel">
+
+    <div class="carousel-slide active">
+      <img src="{{ url_for('static', filename='images/img1.jpg') }}" alt="Quartier Danga – vue générale">
+      <div class="carousel-caption">
+        <h2>Quartier Danga</h2>
+        <p>Un quartier vivant au cœur de Cocody, Abidjan</p>
+      </div>
+    </div>
+
+    <div class="carousel-slide">
+      <img src="{{ url_for('static', filename='images/sibar_img.jpeg') }}" alt="Danga – vie de quartier">
+      <div class="carousel-caption">
+        <h2>Vie de Quartier</h2>
+        <p>Solidarité, dynamisme et culture locale au quotidien</p>
+      </div>
+    </div>
+
+    <div class="carousel-slide">
+      <img src="{{ url_for('static', filename='images/img2.jpg') }}" alt="Danga – infrastructure">
+      <div class="carousel-caption">
+        <h2>Lieux d’intérêt</h2>
+        <p>Le Stade Félix-Houphouët-Boigny constitu l'un des points forts du quartier.</p>
+      </div>
+    </div>
+    <div class="carousel-slide">
+      <img src="{{ url_for('static', filename='images/img3.jpg') }}" alt="Danga – infrastructure">
+      <div class="carousel-caption">
+        <h2>Le Pont Alassane Ouattara</h2>
+        <p>Un véritable joyau architectural, symbole de modernité et d’élégance. </p>
+      </div>
+    </div>
+    <!-- Contrôles -->
+    <button class="carousel-btn carousel-prev" onclick="carouselMove(-1)">&#8249;</button>
+    <button class="carousel-btn carousel-next" onclick="carouselMove(1)">&#8250;</button>
+
+    <!-- Indicateurs -->
+    <div class="carousel-dots">
+      <span class="dot active" onclick="carouselGoTo(0)"></span>
+      <span class="dot" onclick="carouselGoTo(1)"></span>
+      <span class="dot" onclick="carouselGoTo(2)"></span>
+      <span class="dot" onclick="carouselGoTo(3)"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BIENVENUE
+══════════════════════════════════════════════ -->
+<div class="accueil-welcome">
+  <div class="welcome-icon"><i class="fa-solid fa-map-location-dot"></i></div>
+  <div class="welcome-text">
+    <h2>Bienvenue sur la page de l'Annuaire Statistique de Danga</h2>
+    <p>Cette plateforme numérique permet la gestion, le suivi et l'analyse des données démographiques
+       du quartier Danga. Enregistrement des habitants, suivi des ménages, événements vitaux, mouvements
+       résidentiels et rapports statistiques — tout en un seul outil.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     INFOS QUARTIER
+══════════════════════════════════════════════ -->
+<div class="section-title-bar">
+  <i class="fa-solid fa-circle-info"></i>&nbsp; À propos du Quartier Danga
+</div>
+
+<div class="accueil-info-grid">
+
+  <div class="info-card">
+    <div class="info-card-icon" style="background:var(--primary-light, #e8f4fd); color:var(--primary);">
+      <i class="fa-solid fa-map-pin"></i>
+    </div>
+    <div class="info-card-body">
+      <h3>Localisation</h3>
+      <p>Danga est un quartier situé dans la commune de <strong>Cocody</strong>, l'une des 13 communes
+         d'Abidjan, capitale économique de la Côte d'Ivoire. Il est bordé par d'autres quartiers
+         résidentiels de Cocody et bénéficie d'une position géographique centrale.</p>
+    </div>
+  </div>
+
+  <div class="info-card">
+    <div class="info-card-icon" style="background:#fef3e2; color:#e67e22;">
+      <i class="fa-solid fa-users"></i>
+    </div>
+    <div class="info-card-body">
+      <h3>Population &amp; Démographie</h3>
+      <p>Danga est un quartier à dominante résidentielle, composé de ménages aux profils variés —
+         fonctionnaires, commerçants, artisans et jeunes actifs. Sa population est diverse, reflétant
+         le brassage culturel caractéristique d'Abidjan.</p>
+    </div>
+  </div>
+
+  <div class="info-card">
+    <div class="info-card-icon" style="background:#edfaf1; color:#27ae60;">
+      <i class="fa-solid fa-road"></i>
+    </div>
+    <div class="info-card-body">
+      <h3>Infrastructures</h3>
+      <p>Le quartier dispose d'un réseau de voiries internes, de points d'eau, d'établissements
+         scolaires de proximité et de commerces de première nécessité. Sa proximité avec les axes
+         principaux de Cocody facilite les déplacements vers le centre d'Abidjan.</p>
+    </div>
+  </div>
+
+  <div class="info-card">
+    <div class="info-card-icon" style="background:#fdecea; color:#e74c3c;">
+      <i class="fa-solid fa-landmark"></i>
+    </div>
+    <div class="info-card-body">
+      <h3>Administration Locale</h3>
+      <p>Danga est rattaché à la mairie de <strong>Cocody</strong>. La gestion des affaires locales
+         implique des chefs de quartier, des comités de développement et des délégués de secteur qui
+         assurent le lien entre les habitants et les autorités communales.</p>
+    </div>
+  </div>
+
+  <div class="info-card">
+    <div class="info-card-icon" style="background:#f3f0fd; color:#8e44ad;">
+      <i class="fa-solid fa-leaf"></i>
+    </div>
+    <div class="info-card-body">
+      <h3>Environnement</h3>
+      <p>Comme beaucoup de quartiers de Cocody, Danga bénéficie d'un cadre relativement verdoyant,
+         avec des espaces d'habitation de taille humaine. Des efforts de sensibilisation à la
+         propreté et à la gestion des déchets y sont régulièrement menés.</p>
+    </div>
+  </div>
+
+  <div class="info-card">
+    <div class="info-card-icon" style="background:#e8f8f5; color:#16a085;">
+      <i class="fa-solid fa-chart-line"></i>
+    </div>
+    <div class="info-card-body">
+      <h3>Enjeux &amp; Développement</h3>
+      <p>L'annuaire statistique de Danga vise à appuyer les décisions locales par des données fiables :
+         planification des services, suivi des naissances et décès, gestion des arrivées et départs,
+         et production de rapports à destination des autorités de la commune de Cocody.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════
+     LIENS RAPIDES
+══════════════════════════════════════════════ -->
+<div class="section-title-bar" style="margin-top:2rem;">
+  <i class="fa-solid fa-bolt"></i>&nbsp; Accès rapides
+</div>
+
+<div class="accueil-links">
+  <a href="{{ url_for('dashboard') }}" class="accueil-link-card">
+    <i class="fa-solid fa-gauge"></i>
+    <span>Tableau de bord</span>
+  </a>
+  <a href="{{ url_for('habitants_list') }}" class="accueil-link-card">
+    <i class="fa-solid fa-users"></i>
+    <span>Habitants</span>
+  </a>
+  <a href="{{ url_for('menages_list') }}" class="accueil-link-card">
+    <i class="fa-solid fa-house"></i>
+    <span>Ménages</span>
+  </a>
+  <a href="{{ url_for('evenements_list') }}" class="accueil-link-card">
+    <i class="fa-solid fa-heart-pulse"></i>
+    <span>Événements</span>
+  </a>
+  <a href="{{ url_for('mouvements_list') }}" class="accueil-link-card">
+    <i class="fa-solid fa-arrows-rotate"></i>
+    <span>Mouvements</span>
+  </a>
+  <a href="{{ url_for('rapports') }}" class="accueil-link-card">
+    <i class="fa-solid fa-chart-column"></i>
+    <span>Rapports</span>
+  </a>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  let current = 0;
+  const slides = document.querySelectorAll('.carousel-slide');
+  const dots   = document.querySelectorAll('.dot');
+
+  function show(n){
+    slides[current].classList.remove('active');
+    dots[current].classList.remove('active');
+    current = (n + slides.length) % slides.length;
+    slides[current].classList.add('active');
+    dots[current].classList.add('active');
+  }
+
+  window.carouselMove = (dir) => show(current + dir);
+  window.carouselGoTo = (n)   => show(n);
+
+  // Autoplay 5 s
+  setInterval(() => show(current + 1), 5000);
+})();
+</script>
+{% endblock %}

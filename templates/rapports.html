@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Rapport statistique — Annuaire du Quartier{% endblock %}
+
+{% block page_title %}Rapport statistique{% endblock %}
+
+{% block breadcrumb %}
+<div class="header-breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Accueil</a>
+  <span class="sep">›</span>
+  <span>Rapport statistique</span>
+</div>
+{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('rapport_impression') }}" class="btn btn-primary">
+  <i class="fa-solid fa-print"></i> Version PDF
+</a>
+<a href="{{ url_for('export_rapport_word') }}" class="btn btn-export">
+  <i class="fa-solid fa-download"></i> Exporter en Word
+</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="rapport-document">
+
+  <div class="rapport-cover">
+    <h2>RAPPORT STATISTIQUE DU QUARTIER</h2>
+    <h3>Danga, Abidjan</h3>
+    <p class="rapport-date">Date de génération : {{ today }}</p>
+  </div>
+
+  <div class="rapport-meta">
+    <div>
+      <strong>Objet :</strong><br>
+      Suivi statistique de la population du quartier
+    </div>
+    <div>
+      <strong>Source :</strong><br>
+      Base de données de l'Annuaire Statistique de Danga
+    </div>
+    <div>
+      <strong>Référence :</strong><br>
+      Rapport généré automatiquement par l'application
+    </div>
+  </div>
+
+  <h3 class="rapport-section-title">Synthèse</h3>
+
+  <div class="rapport-text">{{ rapport_narratif }}</div>
+
+  <div class="rapport-footer">
+    <p>
+      Produit automatiquement par l'Annuaire Statistique de Danga.<br>
+      Les résultats sont calculés à partir des données enregistrées dans la base locale.
+    </p>
+  </div>
+
+</div>
+
+{% endblock %}

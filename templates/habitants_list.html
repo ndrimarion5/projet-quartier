@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Habitants — Annuaire du Quartier{% endblock %}
+
+{% block page_title %}Habitants{% endblock %}
+
+{% block breadcrumb %}
+<div class="header-breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Accueil</a>
+  <span class="sep">›</span>
+  <span>Habitants</span>
+</div>
+{% endblock %}
+
+{% block header_actions %}
+{% if session.role in ['admin','agent'] %}
+  <a href="{{ url_for('import_habitants') }}" class="btn btn-secondary"><i class="fa-solid fa-file-import"></i> Importer</a>
+  <a href="{{ url_for('habitant_add') }}" class="btn btn-primary"> <i class="fa-solid fa-plus"></i> Ajouter un habitant</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<!-- Filtres -->
+<div class="card mb-6">
+  <div class="card-body">
+    <form method="GET" class="search-bar advanced">
+      <div class="search-input-wrapper">
+        <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input type="text" name="q" value="{{ q }}"
+               placeholder="Nom, prénom, téléphone ou adresse"
+               class="form-control search-input">
+      </div>
+      <select name="sexe" class="filter-select">
+        <option value="">Tous les sexes</option>
+        <option value="Masculin"  {% if sexe == 'Masculin'  %}selected{% endif %}>Masculin</option>
+        <option value="Féminin"   {% if sexe == 'Féminin'   %}selected{% endif %}>Féminin</option>
+      </select>
+      <select name="statut" class="filter-select">
+        <option value="">Tous les statuts</option>
+        <option value="actif"   {% if statut == 'actif'   %}selected{% endif %}>Actif</option>
+        <option value="decede"  {% if statut == 'decede'  %}selected{% endif %}>Décédé</option>
+        <option value="parti"   {% if statut == 'parti'   %}selected{% endif %}>Parti</option>
+      </select>
+      <select name="profession" class="filter-select">
+        <option value="">Toutes les professions</option>
+        {% for item in professions %}
+          <option value="{{ item }}" {% if profession == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+      <select name="niveau" class="filter-select">
+        <option value="">Tous les niveaux</option>
+        {% for item in niveaux %}
+          <option value="{{ item }}" {% if niveau == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+      <select name="secteur" class="filter-select">
+        <option value="">Tous les secteurs</option>
+        {% for item in secteurs %}
+          <option value="{{ item }}" {% if secteur == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+      <input type="number" name="age_min" value="{{ age_min }}" min="0" max="120" class="filter-select" placeholder="Age min">
+      <input type="number" name="age_max" value="{{ age_max }}" min="0" max="120" class="filter-select" placeholder="Age max">
+      <label class="check-filter">
+        <input type="checkbox" name="sans_menage" value="1" {% if sans_menage %}checked{% endif %}>
+        Sans ménage
+      </label>
+      <button type="submit" class="btn btn-primary">Filtrer</button>
+      {% if q or sexe or statut or profession or niveau or secteur or age_min or age_max or sans_menage %}
+        <a href="{{ url_for('habitants_list') }}" class="btn btn-secondary"><i class="fa-solid fa-filter-circle-xmark"></i> Effacer</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<!-- Tableau -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-title"><i class="fa-solid fa-users"></i> {{ habitants|length }} habitant(s)</span>
+    {% if session.role in ['admin','responsable'] %}
+      <a href="{{ url_for('export_habitants') }}" class="btn btn-export btn-sm"><i class="fa-solid fa-download"></i> Exporter Excel</a>
+    {% endif %}
+  </div>
+  <div class="table-wrapper">
+    <table class="habitants-table">
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Nom complet</th>
+          <th>Sexe</th>
+          <th>Date de naissance</th>
+          <th>Profession</th>
+          <th>Téléphone</th>
+          <th>Adresse</th>
+          <th>Position dans le ménage</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in habitants %}
+        <tr>
+          <td class="text-muted text-sm">{{ h.id_habitant }}</td>
+          <td>
+            <a href="{{ url_for('habitant_detail', id=h.id_habitant) }}" class="text-orange font-bold">
+              {{ h.prenom }} {{ h.nom }}
+            </a>
+          </td>
+          <td>{{ h.sexe or '—' }}</td>
+          <td class="text-sm">{{ h.date_de_naissance.strftime('%d/%m/%Y') if h.date_de_naissance else '—' }}</td>
+          <td>{{ h.profession or '—' }}</td>
+          <td>{{ h.telephone or '—' }}</td>
+          <td class="text-sm text-muted">{{ h.adresse or '—' }}</td>
+          <td>{{ h.lien_avec_chef or '—' }}</td>
+          <td>
+            {% if h.statut == 'actif' or not h.statut %}
+              <span class="badge badge-green">Actif</span>
+            {% elif h.statut == 'decede' %}
+              <span class="badge badge-gray">Décédé</span>
+            {% elif h.statut == 'parti' %}
+              <span class="badge badge-yellow">Parti</span>
+            {% else %}
+              <span class="badge badge-gray">{{ h.statut }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="d-flex gap-2">
+              <a href="{{ url_for('habitant_detail', id=h.id_habitant) }}"
+                 class="btn btn-secondary btn-sm btn-icon" title="Voir"><i class="fa-solid fa-eye"></i></a>
+              {% if session.role in ['admin','agent'] %}
+              <a href="{{ url_for('habitant_edit', id=h.id_habitant) }}"
+                 class="btn btn-outline btn-sm btn-icon" title="Modifier"><i class="fa-solid fa-pen"></i></a>
+              {% endif %}
+              {% if session.role == 'admin' %}
+              <form method="POST" action="{{ url_for('habitant_delete', id=h.id_habitant) }}"
+                    class="confirm-delete" data-name="{{ h.prenom }} {{ h.nom }}">
+                <button type="submit" class="btn btn-danger btn-sm btn-icon" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="10" class="table-empty">
+            Aucun habitant trouvé.
+            {% if session.role in ['admin','agent'] %}
+              <a href="{{ url_for('habitant_add') }}" class="text-orange">Ajouter le premier habitant →</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

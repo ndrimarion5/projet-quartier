@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Historique des actions — Annuaire du Quartier{% endblock %}
+
+{% block page_title %}Historique des actions{% endblock %}
+
+{% block breadcrumb %}
+<div class="header-breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Accueil</a>
+  <span class="sep">›</span>
+  <span>Historique</span>
+</div>
+{% endblock %}
+
+{% block header_actions %}
+<span style="color:rgba(255,255,255,.8); font-size:.85rem;">Traçabilité de toutes les opérations</span>
+{% endblock %}
+
+{% block content %}
+
+<!-- Filtres -->
+<div class="card mb-6">
+  <div class="card-body">
+    <form method="GET" class="search-bar" style="flex-wrap:wrap; gap:12px; align-items:flex-end;">
+
+      <div class="form-group" style="flex:1; min-width:160px; margin-bottom:0;">
+        <label class="form-label">Utilisateur</label>
+        <select name="utilisateur" class="form-control">
+          <option value="">Tous</option>
+          {% for u in utilisateurs %}
+            <option value="{{ u }}" {% if u == utilisateur %}selected{% endif %}>{{ u }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="flex:1; min-width:160px; margin-bottom:0;">
+        <label class="form-label">Action (mot-clé)</label>
+        <input type="text" name="action" class="form-control"
+               value="{{ action_f }}" placeholder="Ex: Ajout, Connexion…">
+      </div>
+
+      <div class="form-group" style="flex:1; min-width:140px; margin-bottom:0;">
+        <label class="form-label">Date début</label>
+        <input type="date" name="date_debut" class="form-control" value="{{ date_debut }}">
+      </div>
+
+      <div class="form-group" style="flex:1; min-width:140px; margin-bottom:0;">
+        <label class="form-label">Date fin</label>
+        <input type="date" name="date_fin" class="form-control" value="{{ date_fin }}">
+      </div>
+
+      <div class="d-flex gap-2" style="align-self:flex-end; padding-bottom:0;">
+        <button type="submit" class="btn btn-primary">Filtrer</button>
+        <a href="{{ url_for('historique') }}" class="btn btn-secondary">Effacer</a>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- Tableau -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-title"><i class="fa-solid fa-arrow-rotate-left"></i> {{ logs|length }} enregistrement(s)</span>
+  </div>
+
+  {% if logs %}
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Date &amp; Heure</th>
+          <th>Utilisateur</th>
+          <th>Rôle</th>
+          <th>Action</th>
+          <th>Détails</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td class="text-muted text-sm">{{ log.id }}</td>
+          <td>
+            <span class="font-bold">{{ log.date_action.strftime('%d/%m/%Y') }}</span><br>
+            <span class="text-muted text-sm">{{ log.date_action.strftime('%H:%M:%S') }}</span>
+          </td>
+          <td>
+            <span class="badge badge-blue">{{ log.utilisateur }}</span>
+          </td>
+          <td>
+            <span class="text-muted text-sm">{{ log.role }}</span>
+          </td>
+          <td>
+            {% if 'Ajout' in log.action %}
+              <span class="badge badge-green">{{ log.action }}</span>
+            {% elif 'Suppression' in log.action %}
+              <span class="badge badge-red">{{ log.action }}</span>
+            {% elif 'Connexion' in log.action %}
+              <span class="badge badge-blue">{{ log.action }}</span>
+            {% elif 'Modification' in log.action or 'Réinitialisation' in log.action %}
+              <span class="badge badge-yellow">{{ log.action }}</span>
+            {% else %}
+              <span class="badge badge-gray">{{ log.action }}</span>
+            {% endif %}
+          </td>
+          <td class="text-sm">{{ log.details or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="table-empty">
+    <div style="font-size:2.5rem; margin-bottom:12px;"><i class="fa-solid fa-arrow-rotate-left"></i></div>
+    <p>Aucune action trouvée pour ces critères.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

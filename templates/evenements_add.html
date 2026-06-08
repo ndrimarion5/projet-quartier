@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Enregistrer un événement — Annuaire du Quartier{% endblock %}
+
+{% block page_title %}Enregistrer un événement{% endblock %}
+
+{% block breadcrumb %}
+<div class="header-breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Accueil</a>
+  <span class="sep">›</span>
+  <a href="{{ url_for('evenements_list') }}">Événements vitaux</a>
+  <span class="sep">›</span>
+  <span>Ajouter</span>
+</div>
+{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('evenements_list') }}" class="btn btn-secondary">Retour</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width:640px;">
+  <div class="card-header">
+    <span class="card-title"><i class="fa-solid fa-circle-info"></i> Détails de l'événement</span>
+  </div>
+  <div class="card-body">
+    <form method="POST">
+      <div class="form-grid">
+
+        <div class="form-group full">
+          <label class="form-label">Type d'événement <span class="req">*</span></label>
+          <select id="type_evenement" name="type_evenement" class="form-control" required onchange="toggleEventType()">
+            <option value="">— Sélectionner le type —</option>
+            <option value="naissance"><i class="fa-solid fa-baby"></i> Naissance</option>
+            <option value="deces"><i class="fa-solid fa-eye"></i> Décès</option>
+
+          </select>
+        </div>
+
+        <!-- Section pour DÉCÈS : sélectionner un habitant existant -->
+        <div id="section-deces" class="form-group full" style="display:none;">
+          <label class="form-label">Habitant concerné <span class="req">*</span></label>
+          <select name="id_habitant" id="id_habitant" class="form-control">
+            <option value="">— Sélectionner un habitant —</option>
+            {% for h in habitants %}
+            <option value="{{ h.id_habitant }}">{{ h.prenom }} {{ h.nom }} (ID {{ h.id_habitant }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Section pour NAISSANCE : créer un nouvel habitant -->
+        <div id="section-naissance" class="form-group full" style="display:none;">
+          <div style="background:#f5f5f5; padding:20px; border-radius:8px;">
+            <h4 style="margin-top:0; margin-bottom:15px;">Informations du nouveau-né</h4>
+            
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Prénom <span class="req">*</span></label>
+                <input type="text" name="nouveau_prenom" id="nouveau_prenom" class="form-control" placeholder="Prénom">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Nom <span class="req">*</span></label>
+                <input type="text" name="nouveau_nom" id="nouveau_nom" class="form-control" placeholder="Nom">
+              </div>
+
+              <div class="form-group full">
+                <label class="form-label">Sexe <span class="req">*</span></label>
+                <select name="nouveau_genre" id="nouveau_genre" class="form-control">
+                  <option value="">— Sélectionner —</option>
+                  <option value="Masculin">Masculin</option>
+                  <option value="Féminin">Féminin</option>
+                </select>
+              </div>
+
+              <div class="form-group full">
+                <label class="form-label">Date de naissance <span class="req">*</span></label>
+                <input type="date" name="nouveau_date_naissance" id="nouveau_date_naissance" class="form-control" required>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group full">
+          <label class="form-label">Date de l'événement <span class="req">*</span></label>
+          <input type="date" name="date_evenement" id="date_evenement" class="form-control"
+                 value="{{ today }}" max="{{ today }}" required>
+        </div>
+
+        <div class="form-group full">
+          <label class="form-label">Description / Notes</label>
+          <textarea name="description" class="form-control"
+                    placeholder="Informations complémentaires (lieu, cause, remarques…)"></textarea>
+        </div>
+
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Enregistrer l'événement</button>
+        <a href="{{ url_for('evenements_list') }}" class="btn btn-secondary">Annuler</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function toggleEventType() {
+  const typeEvenement = document.getElementById('type_evenement').value;
+  const sectionDeces = document.getElementById('section-deces');
+  const sectionNaissance = document.getElementById('section-naissance');
+  const idHabitantSelect = document.getElementById('id_habitant');
+  const dateEvenement = document.getElementById('date_evenement');
+  const nouveauDateNaissance = document.getElementById('nouveau_date_naissance');
+
+  if (typeEvenement === 'deces') {
+    sectionDeces.style.display = 'block';
+    sectionNaissance.style.display = 'none';
+    idHabitantSelect.required = true;
+    document.getElementById('nouveau_prenom').required = false;
+    document.getElementById('nouveau_nom').required = false;
+    document.getElementById('nouveau_genre').required = false;
+    nouveauDateNaissance.required = false;
+  } else if (typeEvenement === 'naissance') {
+    sectionDeces.style.display = 'none';
+    sectionNaissance.style.display = 'block';
+    idHabitantSelect.required = false;
+    document.getElementById('nouveau_prenom').required = true;
+    document.getElementById('nouveau_nom').required = true;
+    document.getElementById('nouveau_genre').required = true;
+    nouveauDateNaissance.required = true;
+    
+    // Lier la date de naissance à la date de l'événement
+    nouveauDateNaissance.addEventListener('change', function() {
+      dateEvenement.value = this.value;
+    });
+  } else {
+    sectionDeces.style.display = 'none';
+    sectionNaissance.style.display = 'none';
+    idHabitantSelect.required = false;
+    document.getElementById('nouveau_prenom').required = false;
+    document.getElementById('nouveau_nom').required = false;
+    document.getElementById('nouveau_genre').required = false;
+    nouveauDateNaissance.required = false;
+  }
+}
+
+// Initialiser au chargement
+document.addEventListener('DOMContentLoaded', function() {
+  toggleEventType();
+});
+</script>
+
+{% endblock %}

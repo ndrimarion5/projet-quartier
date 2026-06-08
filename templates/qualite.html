@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}Qualité des données — Annuaire du Quartier{% endblock %}
+
+{% block page_title %}Qualité des données{% endblock %}
+
+{% block breadcrumb %}
+<div class="header-breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Accueil</a>
+  <span class="sep">›</span>
+  <span>Qualité des données</span>
+</div>
+{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('import_habitants') }}" class="btn btn-primary">
+  <i class="fa-solid fa-file-import"></i> Importer
+</a>
+<a href="{{ url_for('rapport_impression') }}" class="btn btn-export">
+  <i class="fa-solid fa-print"></i> Rapport PDF
+</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="quality-hero mb-6">
+  <div>
+    <span class="eyebrow">Pilotage opérationnel</span>
+    <h2>Score de fiabilité des données</h2>
+    <p>
+      Ce centre détecte les informations manquantes, incohérentes ou prioritaires
+      afin d'améliorer la valeur statistique de l'annuaire.
+    </p>
+  </div>
+  <div class="quality-score">
+    <span>Score</span>
+    <strong>{{ snapshot.score }}%</strong>
+    <small>{{ snapshot.issue_total }} point(s) à surveiller</small>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon orange"><i class="fa-solid fa-phone-slash"></i></div>
+    <div>
+      <div class="kpi-value">{{ snapshot.metrics.habitants_sans_telephone }}</div>
+      <div class="kpi-label">Habitants sans téléphone</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon green"><i class="fa-solid fa-calendar-xmark"></i></div>
+    <div>
+      <div class="kpi-value">{{ snapshot.metrics.habitants_sans_naissance }}</div>
+      <div class="kpi-label">Dates de naissance absentes</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon blue"><i class="fa-solid fa-house-circle-xmark"></i></div>
+    <div>
+      <div class="kpi-value">{{ snapshot.metrics.habitants_sans_menage }}</div>
+      <div class="kpi-label">Habitants sans ménage</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon red"><i class="fa-solid fa-user-group"></i></div>
+    <div>
+      <div class="kpi-value">{{ snapshot.metrics.doublons_potentiels }}</div>
+      <div class="kpi-label">Doublons potentiels</div>
+    </div>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="stat-box">
+    <div class="stat-num">{{ snapshot.metrics.telephones_invalides }}</div>
+    <div class="stat-lbl">Téléphones invalides</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-num">{{ snapshot.metrics.ages_anormaux }}</div>
+    <div class="stat-lbl">Ages incohérents</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-num">{{ snapshot.metrics.menages_sans_chef }}</div>
+    <div class="stat-lbl">Ménages sans chef</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-num">{{ snapshot.metrics.menages_sans_coordonnees }}</div>
+    <div class="stat-lbl">Ménages sans coordonnées</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-num">{{ snapshot.metrics.menages_vulnerables }}</div>
+    <div class="stat-lbl">Ménages vulnérables</div>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fa-solid fa-user-pen"></i> Habitants à corriger</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Habitant</th>
+            <th>Téléphone</th>
+            <th>Naissance</th>
+            <th>Ménage</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in snapshot.habitants_a_corriger %}
+          <tr>
+            <td>{{ h.prenom }} {{ h.nom }}</td>
+            <td>{{ h.telephone or 'Manquant' }}</td>
+            <td>{{ h.date_de_naissance.strftime('%d/%m/%Y') if h.date_de_naissance else 'Manquante' }}</td>
+            <td>{{ h.adresse or 'Non rattaché' }}</td>
+            <td>
+              {% if session.role in ['admin','agent'] %}
+              <a href="{{ url_for('habitant_edit', id=h.id_habitant) }}" class="btn btn-outline btn-sm">
+                Corriger
+              </a>
+              {% else %}
+              <a href="{{ url_for('habitant_detail', id=h.id_habitant) }}" class="btn btn-secondary btn-sm">
+                Voir
+              </a>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="table-empty">Aucun habitant prioritaire à corriger.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fa-solid fa-house-medical-circle-check"></i> Ménages à consolider</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Adresse</th>
+            <th>Secteur</th>
+            <th>Membres</th>
+            <th>Score</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in snapshot.menages_a_corriger %}
+          <tr>
+            <td>{{ m.adresse }}</td>
+            <td>{{ m.secteur or 'Non renseigné' }}</td>
+            <td>{{ m.nb_membres }}</td>
+            <td><span class="badge badge-orange">{{ m.score_vulnerabilite or 0 }}</span></td>
+            <td>
+              {% if session.role in ['admin','agent'] %}
+              <a href="{{ url_for('menage_edit', id=m.id_menage) }}" class="btn btn-outline btn-sm">
+                Corriger
+              </a>
+              {% else %}
+              <a href="{{ url_for('menage_detail', id=m.id_menage) }}" class="btn btn-secondary btn-sm">
+                Voir
+              </a>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="table-empty">Aucun ménage prioritaire à consolider.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% if snapshot.duplicates %}
+<div class="card mt-4">
+  <div class="card-header">
+    <span class="card-title"><i class="fa-solid fa-copy"></i> Doublons potentiels</span>
+  </div>
+  <div class="card-body">
+    <div class="chips">
+      {% for d in snapshot.duplicates %}
+        <span class="chip">{{ d.prenom }} {{ d.nom }} - {{ d.total }} fiche(s)</span>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

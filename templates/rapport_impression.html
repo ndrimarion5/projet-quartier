@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rapport imprimable - Annuaire de Danga</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="print-report-page">
+
+<div class="print-toolbar">
+  <a href="{{ url_for('rapports') }}" class="btn btn-secondary">Retour</a>
+  <button type="button" class="btn btn-primary" onclick="window.print()">Imprimer ou enregistrer en PDF</button>
+</div>
+
+<main class="print-report">
+  <section class="print-cover">
+    <div>
+      <span>Annuaire statistique de Danga</span>
+      <h1>Rapport de pilotage démographique</h1>
+      <p>Cocody, Abidjan, Côte d'Ivoire</p>
+    </div>
+    <strong>{{ today }}</strong>
+  </section>
+
+  <section class="print-kpis">
+    <div><span>Population active</span><strong>{{ stats.pop_active }}</strong></div>
+    <div><span>Population totale</span><strong>{{ stats.pop_totale }}</strong></div>
+    <div><span>Ménages</span><strong>{{ stats.nb_menages }}</strong></div>
+    <div><span>Taille moyenne</span><strong>{{ stats.taille_moy_menage }}</strong></div>
+    <div><span>Naissances</span><strong>{{ stats.total_naissances }}</strong></div>
+    <div><span>Décès</span><strong>{{ stats.total_deces }}</strong></div>
+    <div><span>Arrivées</span><strong>{{ stats.total_arrivees }}</strong></div>
+    <div><span>Départs</span><strong>{{ stats.total_departs }}</strong></div>
+  </section>
+
+  <section class="print-section">
+    <h2>Synthèse</h2>
+    <p>{{ rapport_narratif }}</p>
+  </section>
+
+  <section class="print-section">
+    <h2>Qualité des données</h2>
+    <div class="print-kpis compact">
+      <div><span>Score fiabilité</span><strong>{{ quality.score }}%</strong></div>
+      <div><span>Sans téléphone</span><strong>{{ quality.metrics.habitants_sans_telephone }}</strong></div>
+      <div><span>Sans naissance</span><strong>{{ quality.metrics.habitants_sans_naissance }}</strong></div>
+      <div><span>Sans ménage</span><strong>{{ quality.metrics.habitants_sans_menage }}</strong></div>
+      <div><span>Ménages sans chef</span><strong>{{ quality.metrics.menages_sans_chef }}</strong></div>
+      <div><span>Doublons potentiels</span><strong>{{ quality.metrics.doublons_potentiels }}</strong></div>
+    </div>
+  </section>
+
+  <section class="print-footer">
+    <p>
+      Document généré automatiquement par l'Annuaire Statistique de Danga.
+      Les données doivent être relues par un responsable avant diffusion officielle.
+    </p>
+  </section>
+</main>
+
+</body>
+</html>

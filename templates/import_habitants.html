@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Import de données — Annuaire du Quartier{% endblock %}
+
+{% block page_title %}Import de données{% endblock %}
+
+{% block breadcrumb %}
+<div class="header-breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Accueil</a>
+  <span class="sep">›</span>
+  <span>Import habitants</span>
+</div>
+{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('habitants_list') }}" class="btn btn-secondary">
+  <i class="fa-solid fa-users"></i> Retour aux habitants
+</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="premium-hero mb-6">
+  <div>
+    <span class="eyebrow">Import contrôlé</span>
+    <h2>Ajouter des habitants depuis un fichier Excel ou CSV</h2>
+    <p>
+      Le fichier est vérifié avant insertion: champs obligatoires, format téléphone,
+      date de naissance, ménage existant et doublons potentiels.
+    </p>
+  </div>
+  <div class="quality-score compact">
+    <span>Format</span>
+    <strong>CSV / XLSX</strong>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fa-solid fa-file-import"></i> Fichier à importer</span>
+    </div>
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data" class="premium-form">
+        <div class="form-group full">
+          <label class="form-label">Fichier CSV, XLSX ou XLS</label>
+          <input type="file" name="fichier" class="form-control" accept=".csv,.xlsx,.xls" required>
+          <div class="form-hint">Limite: 1000 lignes par import pour garder une validation lisible.</div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-upload"></i> Lancer l'import
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="fa-solid fa-table-list"></i> Colonnes reconnues</span>
+    </div>
+    <div class="card-body">
+      <div class="chips">
+        {% for col in expected_columns %}
+          <span class="chip">{{ col }}</span>
+        {% endfor %}
+      </div>
+      <p class="text-muted mt-4">
+        Les libellés proches sont acceptés: téléphone/tel, prénom/prenom,
+        adresse/adresse_menage. Si un ménage est indiqué, il doit déjà exister.
+      </p>
+    </div>
+  </div>
+</div>
+
+{% if result %}
+<div class="card mt-4">
+  <div class="card-header">
+    <span class="card-title"><i class="fa-solid fa-clipboard-check"></i> Résultat de l'import</span>
+  </div>
+  <div class="card-body">
+    <div class="kpi-grid3">
+      <div class="stat-box">
+        <div class="stat-num">{{ result.total }}</div>
+        <div class="stat-lbl">Lignes lues</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">{{ result.inserted }}</div>
+        <div class="stat-lbl">Ajouts réussis</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">{{ result.skipped }}</div>
+        <div class="stat-lbl">Lignes ignorées</div>
+      </div>
+    </div>
+
+    {% if result.errors %}
+    <div class="alert-panel warning">
+      <strong>Points à corriger</strong>
+      <ul class="clean-list">
+        {% for err in result.errors %}
+          <li>{{ err }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

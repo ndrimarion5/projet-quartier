@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Ménage id{{ menage.id_menage }} — Annuaire du Quartier{% endblock %}
+
+{% block page_title %}Fiche ménage{% endblock %}
+
+{% block breadcrumb %}
+<div class="header-breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Accueil</a>
+  <span class="sep">›</span>
+  <a href="{{ url_for('menages_list') }}">Ménages</a>
+  <span class="sep">›</span>
+  <span>id{{ menage.id_menage }}</span>
+</div>
+{% endblock %}
+
+{% block header_actions %}
+<div class="d-flex gap-2">
+  {% if session.role in ['admin','agent'] %}
+  <a href="{{ url_for('menage_edit', id=menage.id_menage) }}" class="btn btn-outline"><i class="fa-solid fa-pen"></i> Modifier</a>
+  {% endif %}
+  {% if session.role == 'admin' %}
+  <form method="POST" action="{{ url_for('menage_delete', id=menage.id_menage) }}"
+        class="confirm-delete" data-name="ce ménage">
+    <button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash"></i> Supprimer</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- Infos ménage -->
+<div class="card mb-6" >
+  <div class="detail-header">
+    <div class="detail-avatar" style="border-radius:14px; font-size:1.4rem;"><i class="fa-solid fa-house"></i> </div>
+    <div>
+      <div class="detail-name">{{ menage.adresse or 'Adresse non renseignée' }}</div>
+      <div class="detail-sub">Ménage id{{ menage.id_menage }} &nbsp;·&nbsp; {{ membres|length }} membre(s)</div>
+    </div>
+  </div>
+  <div class="detail-body">
+    <div class="info-grid">
+      <div class="info-item">
+        <label>Adresse</label>
+        <span>{{ menage.adresse or '—' }}</span>
+      </div>
+      <div class="info-item">
+        <label>Revenu mensuel</label>
+        <span>{{ '{:,.0f} FCFA'.format(menage.revenu) if menage.revenu else '—' }}</span>
+      </div>
+      <div class="info-item">
+        <label>Secteur</label>
+        <span>{{ menage.secteur or '—' }}</span>
+      </div>
+      <div class="info-item">
+        <label>Score de vulnérabilité</label>
+        <span>
+          {% if menage.score_vulnerabilite is not none and menage.score_vulnerabilite != '' %}
+            {% set s = menage.score_vulnerabilite | float %}
+            <span class="badge {% if s >= 70 %}badge-red{% elif s >= 50 %}badge-yellow{% else %}badge-green{% endif %}">
+              {{ '%.1f'|format(s) }} / 100
+            </span>
+          {% else %}—{% endif %}
+        </span>
+      </div>
+      <div class="info-item">
+        <label>Coordonnées GPS</label>
+        <span>
+          {% if menage.latitude and menage.longitude %}
+            {{ menage.latitude }}, {{ menage.longitude }}
+            &nbsp;<a href="https://www.openstreetmap.org/?mlat={{ menage.latitude }}&mlon={{ menage.longitude }}&zoom=17"
+               target="_blank" class="text-orange" title="Voir sur la carte"><i class="fa-solid fa-map-location-dot"></i></a>
+          {% else %}—{% endif %}
+        </span>
+      </div>
+      <div class="info-item">
+        <label>Nombre de membres</label>
+        <span>{{ membres|length }}</span>
+      </div>
+      <div class="info-item">
+        <label>Chef de ménage</label>
+        <span>
+          {% if menage.chef_nom %}
+            {{ menage.chef_prenom }} {{ menage.chef_nom }}
+          {% else %}
+            <span class="text-muted">Non renseigné</span>
+          {% endif %}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+{% if session.role in ['admin','agent'] %}
+<div class="card mb-6" >
+  <div class="card-header">
+    <span class="card-title">
+      <i class="fa-solid fa-user-tie"></i> Chef de ménage
+    </span>
+  </div>
+
+  <div class="card-body">
+    {% if membres|length > 0 %}
+    <form method="POST" action="{{ url_for('choisir_chef_menage', id=menage.id_menage) }}">
+      <div class="form-group full">
+        <label class="form-label">Choisir le chef parmi les membres actifs</label>
+
+        <select name="id_chef_menage" class="form-control">
+          <option value="">— Aucun chef sélectionné —</option>
+
+          {% for membre in membres %}
+            {% if membre.statut == 'actif' or not membre.statut %}
+              <option value="{{ membre.id_habitant }}"
+                {% if menage.id_chef_menage == membre.id_habitant %}selected{% endif %}>
+                {{ membre.prenom }} {{ membre.nom }}
+              </option>
+            {% endif %}
+          {% endfor %}
+        </select>
+
+        <div class="form-hint">
+          Le chef doit obligatoirement être un membre actif de ce ménage.
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+          Enregistrer le chef
+        </button>
+      </div>
+    </form>
+    {% else %}
+      <p class="text-muted">
+        Aucun membre n’est encore rattaché à ce ménage. Ajoutez d’abord les habitants, puis choisissez le chef.
+      </p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+<!-- Membres du ménage -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-title"><i class="fa-solid fa-users"></i>  Membres du ménage</span>
+    {% if session.role in ['admin','agent'] %}
+    <a href="{{ url_for('habitant_add', id_menage=menage.id_menage) }}" class="btn btn-primary btn-sm">
+      ＋ Ajouter un membre
+    </a>
+    {% endif %}
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Nom complet</th>
+          <th>Sexe</th>
+          <th>Date naissance</th>
+          <th>Profession</th>
+          <th>Téléphone</th>
+          <th>Position</th>
+          <th>Statut</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in membres %}
+        <tr>
+          <td>
+            <a href="{{ url_for('habitant_detail', id=h.id_habitant) }}" class="text-orange font-bold">
+              {{ h.prenom }} {{ h.nom }}
+              {% if menage.id_chef_menage == h.id_habitant %}
+                <span class="badge badge-blue">Chef</span>
+              {% endif %}
+            </a>
+          </td>
+          <td>{{ h.sexe or '—' }}</td>
+          <td class="text-sm">{{ h.date_de_naissance.strftime('%d/%m/%Y') if h.date_de_naissance else '—' }}</td>
+          <td>{{ h.profession or '—' }}</td>
+          <td>{{ h.telephone or '—' }}</td>
+          <td>{{ h.lien_avec_chef or '—' }}</td>
+          <td>
+            {% if h.statut == 'actif' or not h.statut %}
+              <span class="badge badge-green">Actif</span>
+            {% elif h.statut == 'decede' %}
+              <span class="badge badge-gray">Décédé</span>
+            {% else %}
+              <span class="badge badge-yellow">{{ h.statut }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{{ url_for('habitant_detail', id=h.id_habitant) }}"
+               class="btn btn-secondary btn-sm btn-icon" title="Voir"><i class="fa-solid fa-eye"></i></a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="table-empty">Aucun membre rattaché à ce ménage.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

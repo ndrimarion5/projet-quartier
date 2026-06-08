@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Modifier — {{ habitant.prenom }} {{ habitant.nom }}{% endblock %}
+
+{% block page_title %}Modifier un habitant{% endblock %}
+
+{% block breadcrumb %}
+<div class="header-breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Accueil</a>
+  <span class="sep">›</span>
+  <a href="{{ url_for('habitants_list') }}">Habitants</a>
+  <span class="sep">›</span>
+  <a href="{{ url_for('habitant_detail', id=habitant.id_habitant) }}">{{ habitant.prenom }} {{ habitant.nom }}</a>
+  <span class="sep">›</span>
+  <span>Modifier</span>
+</div>
+{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('habitant_detail', id=habitant.id_habitant) }}" class="btn btn-secondary">← Retour</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width:860px;">
+  <div class="card-header">
+    <span class="card-title"><i class="fa-solid fa-pen"></i> Modifier les informations</span>
+  </div>
+  <div class="card-body">
+    <form method="POST">
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Nom <span class="req">*</span></label>
+          <input type="text" name="nom" class="form-control"
+                 value="{{ habitant.nom }}" required style="text-transform:uppercase;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Prénom <span class="req">*</span></label>
+          <input type="text" name="prenom" class="form-control"
+                 value="{{ habitant.prenom }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Sexe <span class="req">*</span></label>
+          <select name="sexe" class="form-control" required>
+            <option value="">— Sélectionner —</option>
+            <option value="Masculin" {% if habitant.sexe == 'Masculin' %}selected{% endif %}>Masculin</option>
+            <option value="Féminin"  {% if habitant.sexe == 'Féminin'  %}selected{% endif %}>Féminin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date de naissance</label>
+          <input type="date" name="date_de_naissance" class="form-control"
+                 value="{{ habitant.date_de_naissance.strftime('%Y-%m-%d') if habitant.date_de_naissance else '' }}">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Profession</label>
+          <input type="text" name="profession" class="form-control"
+                 value="{{ habitant.profession or '' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Niveau d'étude</label>
+          <select name="niveau_etude" class="form-control">
+            <option value="">— Sélectionner —</option>
+            {% for niv in ['Aucun','Primaire','Secondaire','Lycée','BTS/DUT','Licence','Master','Doctorat'] %}
+            <option value="{{ niv }}" {% if habitant.niveau_etude == niv %}selected{% endif %}>{{ niv }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Téléphone</label>
+          <input type="tel" name="telephone" class="form-control"
+                 value="{{ habitant.telephone or '' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Statut</label>
+          <select name="statut" class="form-control">
+            <option value="actif"  {% if habitant.statut == 'actif' or not habitant.statut %}selected{% endif %}>Actif</option>
+            <option value="parti"  {% if habitant.statut == 'parti'  %}selected{% endif %}>Parti</option>
+            <option value="decede" {% if habitant.statut == 'decede' %}selected{% endif %}>Décédé</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Ménage de rattachement</label>
+          <select name="id_menage" class="form-control">
+            <option value="">— Aucun ménage —</option>
+            {% for m in menages %}
+            <option value="{{ m.id_menage }}"
+              {% if habitant.id_menage == m.id_menage %}selected{% endif %}>
+              {{ m.adresse }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Lien avec le chef de ménage</label>
+          <select name="lien_avec_chef" class="form-control" required>
+            <option value="">— Sélectionner —</option>
+
+            {% set liens = [
+              'Chef de ménage',
+              'Épouse / Conjointe',
+              'Époux / Conjoint',
+              'Enfant',
+              'Père / Mère',
+              'Frère / Sœur',
+              'Petit-fils / Petite-fille',
+              'Autre parent',
+              'Domestique',
+              'Autre'
+            ] %}
+
+            {% for lien in liens %}
+              <option value="{{ lien }}" {% if habitant.lien_avec_chef == lien %}selected{% endif %}>
+                {{ lien }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Sauvegarder les modifications</button>
+        <a href="{{ url_for('habitant_detail', id=habitant.id_habitant) }}" class="btn btn-secondary">Annuler</a>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+{% endblock %}

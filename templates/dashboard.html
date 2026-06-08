@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de bord — Annuaire du Quartier{% endblock %}
+
+{% block page_title %}Tableau de bord{% endblock %}
+
+{% block breadcrumb %}
+<div class="header-breadcrumb">
+  <span>Visualisation de la dynamique de la population du quartier Danga</span>
+  <span class="sep">·</span>
+  <span>{{ today }}</span>
+</div>
+{% endblock %}
+
+{% block header_actions %}
+<div class="d-flex gap-2">
+  {% if session.role in ['admin','responsable','agent'] %}
+  <a href="{{ url_for('qualite_donnees') }}" class="btn btn-secondary">
+    <i class="fa-solid fa-shield-halved"></i>  Qualité
+  </a>
+  {% endif %}
+  {% if session.role in ['admin','responsable'] %}
+  <a href="{{ url_for('export_rapport') }}" class="btn btn-export">
+    <i class="fa-solid fa-download"></i>  Export Excel
+  </a>
+  {% endif %}
+  {% if session.role in ['admin','agent'] %}
+  <a href="{{ url_for('habitant_add') }}" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i>  Ajouter habitant
+  </a>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── KPIs principaux ──────────────────────────────────────────── -->
+
+ <div class="section-title"><h2> Statistiques démographiques</h2></div>
+
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon orange"><i class="fa-solid fa-users"></i></div>
+    <div>
+      <div class="kpi-value">{{ stats.population }}</div>
+      <div class="kpi-label"> Habitants actifs</div>
+      <div class="kpi-delta up">{{ stats.population_totale }} au total</div>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon green"><i class="fa-solid fa-house"></i></div>
+    <div>
+      <div class="kpi-value">{{ stats.menages }}</div>
+      <div class="kpi-label">Ménages enregistrés</div>
+    </div>
+  </div>
+
+
+  <div class="kpi-card">
+    <div class="kpi-icon red"><i class="fa-solid fa-ruler-vertical"></i></div>
+    <div>
+      <div class="kpi-value">{{  stats.taille_moy_menage }}</div>
+      <div class="kpi-label">Taille moy. du ménage</div>
+    </div>
+  </div>
+
+
+    <div class="kpi-card">
+    <div class="kpi-icon gray"><i class="fa-solid fa-user-clock"></i></div>
+    <div>
+      <div class="kpi-value">{{  stats.age_moyenne }}</div>
+      <div class="kpi-label">Age moyenne </div>
+    </div>
+  </div>
+
+</div> 
+
+
+<!-- ── Graphiques démographiques ───────────────────────── -->
+<div class="section-title">
+  <h2>Graphiques démographiques</h2>
+</div>
+
+<div class="dashboard-grid">
+
+  <!-- Sexe -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Répartition par sexe</span>
+    </div>
+
+    <div class="card-body">
+      <div class="chart-container">
+        <canvas id="chartSexe"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Age -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Pyramide des âges</span>
+      <span class="text-muted text-sm">Population active</span>
+    </div>
+
+    <div class="card-body">
+      <div class="chart-container" >
+        <canvas id="chartAge"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ── Analyse socio-professionnelle ───────────────────────────── -->
+<div class="section-title"><h2>Analyse socio-professionnelle</h2></div>
+
+<div class="kpi-grid2">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Top professions</span>
+    </div>
+    <div class="card-body">
+      <div class="chart-container" style="height:270px;">
+        <canvas id="chartProfessions"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Niveaux d'étude</span>
+    </div>
+    <div class="card-body">
+      <div class="chart-container" style="height:270px;">
+        <canvas id="chartNiveaux"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Statistiques evenementielles ────────────────────────────── -->
+<div class="section-title"><h2>Statistiques evenementielles</h2></div>
+
+<div class="kpi-grid3">
+
+  <div class="stat-box">
+    <div class="stat-num">{{ stats.total_naissances }}</div>
+    <div class="stat-lbl">Naissances totales</div>
+  </div>
+
+  <div class="stat-box">
+    <div class="stat-num">{{ stats.nb_decedes }}</div>
+    <div class="stat-lbl">Total décédés</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-num">{{ stats.nb_partis }}</div>
+    <div class="stat-lbl">Habitants partis</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-num">{{ stats.total_arrivees }}</div>
+    <div class="stat-lbl">Arrivées totales</div>
+  </div>
+  
+</div>
+
+<div class="card">
+    <div class="card-header">
+      <span class="card-title">Évolution mensuelle</span>
+      <span class="text-muted text-sm"></span>
+    </div>
+    <div class="card-body">
+      <div class="chart-container" style="height:360px;">
+        <canvas id="chartEvolution"></canvas>
+      </div>
+    </div>
+</div>
+
+
+<!-- ── Statistiques complémentaires ────────────────────────────── -->
+<div class="section-title"><h2>Statistiques complémentaires</h2></div>
+
+<div class="kpi-grid4">
+  {% if stats.population > 0 %}
+  <div class="stat-box">
+    <div class="stat-num">{{ '%.1f'|format(stats.total_deces / stats.population * 1000) }} ‰</div>
+    <div class="stat-lbl">Taux de mortalité</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-num">{{ '%.1f'|format(stats.total_naissances / stats.population * 1000) }} ‰</div>
+    <div class="stat-lbl">Taux de natalité</div>
+  </div>
+  {% endif %}
+
+  <div class="stat-box">
+    {% set solde = stats.total_arrivees - stats.total_departs %}
+    <div class="stat-num" style="color: {{ 'var(--green-hover)' if solde >= 0 else 'var(--danger)' }};" > {{ '+' if solde > 0 else '' }}{{ solde }}
+    </div>
+    <div class="stat-lbl">Solde migratoire</div>
+  </div>
+ 
+
+
+  <div class="stat-box">
+    <div class="stat-num" >{{ stats.naissances_mois }}</div>
+    <div class="stat-lbl">Naissances ce mois</div>
+ </div>
+
+  <div class="stat-box">
+    <div class="stat-num" >{{ stats.deces_mois }}</div>
+    <div class="stat-lbl">Décès ce mois</div>
+ </div>
+
+  <div class="stat-box">
+    <div class="stat-num" >{{ stats.arrivees_mois }}</div>
+    <div class="stat-lbl">Arrivées ce mois</div>
+ </div>
+
+  <div class="stat-box">
+    <div class="stat-num" >{{ stats.departs_mois }}</div>
+    <div class="stat-lbl">Départs ce mois</div>
+ </div>
+
+</div>
+
+<div class="card mb-6">
+  <div class="card-header">
+    <span class="card-title">Évolution naissances / décès</span>
+    <span class="text-muted text-sm"></span>
+  </div>
+  <div class="card-body">
+    <div class="chart-container" style="height:270px;">
+      <canvas id="chartEvoRap"></canvas>
+    </div>
+  </div>
+</div>
+<!-- ── Actions rapides ─────────────────────────────────────────── -->
+{% if session.role in ['admin','agent'] %}
+<div class="card">
+  <div class="card-header"><span class="card-title">Actions rapides</span></div>
+  <div class="card-body">
+    <div class="d-flex gap-2" style="flex-wrap:wrap;">
+      <a href="{{ url_for('habitant_add') }}"  class="btn btn-primary"><i class="fa-solid fa-plus"></i> Nouvel habitant</a>
+      <a href="{{ url_for('menage_add') }}"     class="btn btn-success"><i class="fa-solid fa-plus"></i>Nouveau ménage</a>
+      <a href="{{ url_for('evenement_add') }}"  class="btn btn-outline"><i class="fa-solid fa-heart-pulse"></i> Événement vital</a>
+      <a href="{{ url_for('mouvement_add') }}"  class="btn btn-secondary"><i class="fa-solid fa-repeat"></i> Mouvement</a>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const sexeData   = {{ sexe_data | tojson }};
+  const ageData    = {{ age_data | tojson }};
+  const evoData    = {{ evolution_data | tojson }};
+  const profData   = {{ professions | tojson }};
+  const nivData    = {{ niveaux | tojson }};
+  const evoRapData = {{ evolution_rapport | tojson }};
+
+  initDashboardCharts(sexeData, ageData, evoData);
+  initRapportCharts(profData, nivData, evoRapData);
+</script>
+{% endblock %}

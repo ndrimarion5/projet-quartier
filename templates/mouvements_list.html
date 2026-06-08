@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Mouvements résidentiels — Annuaire du Quartier{% endblock %}
+
+{% block page_title %}Mouvements résidentiels{% endblock %}
+
+{% block breadcrumb %}
+<div class="header-breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Accueil</a>
+  <span class="sep">›</span>
+  <span>Mouvements</span>
+</div>
+{% endblock %}
+
+{% block header_actions %}
+{% if session.role in ['admin','agent'] %}
+  <a href="{{ url_for('mouvement_add') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Enregistrer un mouvement</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<!-- Filtres -->
+<div class="card mb-6">
+  <div class="card-body">
+    <form method="GET" class="search-bar advanced">
+      <div class="search-input-wrapper">
+        <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input type="text" name="q" value="{{ q }}" class="form-control search-input"
+               placeholder="Habitant, provenance ou destination">
+      </div>
+      <select name="type" class="filter-select">
+        <option value="">Tous les types</option>
+        <option value="arrivee" {% if type_f == 'arrivee' %}selected{% endif %}>Arrivées</option>
+        <option value="depart"  {% if type_f == 'depart'  %}selected{% endif %}>Départs</option>
+        <option value="interne" {% if type_f == 'interne' %}selected{% endif %}>Internes</option>
+      </select>
+      <input type="date" name="date_debut" value="{{ date_debut }}" class="filter-select">
+      <input type="date" name="date_fin" value="{{ date_fin }}" class="filter-select">
+      <button type="submit" class="btn btn-primary">Filtrer</button>
+      {% if type_f or q or date_debut or date_fin %}
+        <a href="{{ url_for('mouvements_list') }}" class="btn btn-secondary"><i class="fa-solid fa-filter-circle-xmark"></i> Effacer</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title"><i class="fa-solid fa-repeat"></i> {{ mouvements|length }} mouvement(s)</span>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Type</th>
+          <th>Habitant</th>
+          <th>Date</th>
+          <th>Provenance</th>
+          <th>Destination</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in mouvements %}
+        <tr>
+          <td class="text-muted text-sm">{{ m.id_mouvement }}</td>
+          <td>
+            {% if m.type_mouvement == 'arrivee' %}
+              <span class="badge badge-green">Arrivée</span>
+            {% elif m.type_mouvement == 'depart' %}
+              <span class="badge badge-orange">Départ</span>
+            {% else %}
+              <span class="badge badge-blue">Interne</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{{ url_for('habitant_detail', id=m.id_habitant) }}" class="text-orange font-bold">
+              {{ m.prenom }} {{ m.nom }}
+            </a>
+          </td>
+          <td class="text-sm">{{ m.date_mouvement.strftime('%d/%m/%Y') if m.date_mouvement else '—' }}</td>
+          <td class="text-muted text-sm">{{ m.provenance or '—' }}</td>
+          <td class="text-muted text-sm">{{ m.destination or '—' }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="table-empty">
+            Aucun mouvement enregistré.
+            {% if session.role in ['admin','agent'] %}
+              <a href="{{ url_for('mouvement_add') }}" class="text-orange">Enregistrer le premier</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

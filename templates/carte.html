@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Carte du quartier — Annuaire du Quartier{% endblock %}
+
+{% block page_title %}Cartographie du quartier{% endblock %}
+
+{% block breadcrumb %}
+<div class="header-breadcrumb">
+  <a href="{{ url_for('accueil') }}">Tableau de bord</a>
+  <span class="sep">›</span>
+  <span>Carte</span>
+</div>
+{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('menages_list') }}" class="btn btn-secondary">
+  Voir les ménages
+</a>
+{% endblock %}
+
+{% block content %}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">
+      <i class="fa-solid fa-map-location-dot"></i>
+      Visualisation géographique des ménages
+    </span>
+  </div>
+
+  <div class="card-body">
+
+    <div class="map-controls-custom">
+      <div class="map-filter-custom">
+
+        <label>
+          Secteur
+          <select id="secteurFilter" class="form-control">
+            <option value="">Tous les secteurs</option>
+          </select>
+        </label>
+
+        <label>
+          Afficher
+          <select id="typeFilter" class="form-control">
+            <option value="tous">Tous les ménages</option>
+            <option value="vulnerables">Ménages vulnérables ≥ 50</option>
+            <option value="tres-vulnerables">Très vulnérables ≥ 70</option>
+          </select>
+        </label>
+
+        <button type="button" class="btn btn-primary" onclick="chargerMarqueurs()">
+          Actualiser la carte
+        </button>
+
+      </div>
+    </div>
+
+    <div id="carte"></div>
+
+    <div id="mapStatus" class="map-status-custom">
+      Chargement de la carte...
+    </div>
+
+    <div class="map-legend-custom">
+      <strong>Indicateur de vulnérabilité</strong>
+
+      <div class="legend-item-custom">
+        <span class="legend-color-custom red"></span>
+        <span>Très vulnérable : score ≥ 70</span>
+      </div>
+
+      <div class="legend-item-custom">
+        <span class="legend-color-custom orange"></span>
+        <span>Vulnérable : score entre 50 et 70</span>
+      </div>
+
+      <div class="legend-item-custom">
+        <span class="legend-color-custom green"></span>
+        <span>Stable : score inférieur à 50</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+<script>
+let carte = null;
+let coucheMarqueurs = null;
+let marqueurs = [];
+
+function initialiserCarte() {
+  if (typeof L === 'undefined') {
+    afficherStatut("Leaflet n'a pas pu être chargé.", true);
+    return;
+  }
+
+  const centre = [5.3600, -4.0083];
+
+  carte = L.map('carte').setView(centre, 13);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19
+  }).addTo(carte);
+
+  coucheMarqueurs = L.layerGroup().addTo(carte);
+
+  chargerSecteurs();
+  chargerMarqueurs();
+
+  setTimeout(() => carte.invalidateSize(), 300);
+}
+
+function afficherStatut(message, erreur = false) {
+  const statut = document.getElementById('mapStatus');
+  statut.textContent = message || '';
+  statut.style.color = erreur ? '#dc2626' : '#64748b';
+}
+
+function chargerSecteurs() {
+  fetch('/api/v1/secteurs')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Impossible de charger les secteurs");
+      }
+      return response.json();
+    })
+    .then(data => {
+      const select = document.getElementById('secteurFilter');
+      select.innerHTML = '<option value="">Tous les secteurs</option>';
+
+      data.secteurs.forEach(secteur => {
+        const option = document.createElement('option');
+        option.value = secteur;
+        option.textContent = secteur;
+        select.appendChild(option);
+      });
+    })
+    .catch(error => {
+      console.error(error);
+    });
+}
+
+function chargerMarqueurs() {
+  const secteur = document.getElementById('secteurFilter').value;
+  const typeFilter = document.getElementById('typeFilter').value;
+
+  let url = '/api/v1/carte/markers';
+
+  if (secteur) {
+    url += '?secteur=' + encodeURIComponent(secteur);
+  }
+
+  afficherStatut('Chargement des ménages géolocalisés...');
+
+  fetch(url)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Erreur API : ' + response.status);
+      }
+      return response.json();
+    })
+    .then(data => {
+      coucheMarqueurs.clearLayers();
+      marqueurs = Array.isArray(data) ? data : [];
+
+      let menagesFiltres = marqueurs;
+
+      if (typeFilter === 'vulnerables') {
+        menagesFiltres = marqueurs.filter(m => m.score_vulnerabilite >= 50);
+      }
+
+      if (typeFilter === 'tres-vulnerables') {
+        menagesFiltres = marqueurs.filter(m => m.score_vulnerabilite >= 70);
+      }
+
+      menagesFiltres.forEach(menage => {
+        const marker = L.circleMarker(
+          [menage.lat, menage.lon],
+          {
+            radius: 9,
+            fillColor: menage.color,
+            color: '#1e293b',
+            weight: 2,
+            opacity: 0.9,
+            fillOpacity: 0.75
+          }
+        );
+
+        const scoreClass =
+          menage.score_vulnerabilite >= 70 ? 'score-high' :
+          menage.score_vulnerabilite >= 50 ? 'score-medium' :
+          'score-low';
+
+        const popupContent = `
+          <div class="popup-content-custom">
+            <h4>${menage.name}</h4>
+
+            <div class="popup-stat-custom">
+              <span>Score vulnérabilité</span>
+              <strong class="${scoreClass}">
+                ${menage.score_vulnerabilite.toFixed(1)}
+              </strong>
+            </div>
+
+            <div class="popup-stat-custom">
+              <span>Secteur</span>
+              <strong>${menage.secteur || 'Non renseigné'}</strong>
+            </div>
+
+            <div class="popup-stat-custom">
+              <span>Adresse</span>
+              <strong>${menage.adresse || 'Non renseignée'}</strong>
+            </div>
+
+            <div class="popup-stat-custom">
+              <span>Membres</span>
+              <strong>${menage.nombre_membres}</strong>
+            </div>
+
+            <div style="margin-top:10px;">
+              <a href="/menages/${menage.id}" class="btn btn-primary" style="font-size:12px; padding:6px 10px;">
+                Voir détails
+              </a>
+            </div>
+          </div>
+        `;
+
+        marker.bindPopup(popupContent);
+        marker.addTo(coucheMarqueurs);
+      });
+
+      if (menagesFiltres.length > 0) {
+        const bounds = L.latLngBounds(
+          menagesFiltres.map(m => [m.lat, m.lon])
+        );
+
+        carte.fitBounds(bounds, { padding: [40, 40] });
+
+        afficherStatut(`${menagesFiltres.length} ménage(s) affiché(s) sur la carte.`);
+      } else {
+        carte.setView([5.3600, -4.0083], 13);
+        afficherStatut('Aucun ménage géolocalisé pour ce filtre.');
+      }
+
+      carte.invalidateSize();
+    })
+    .catch(error => {
+      console.error(error);
+      afficherStatut('Erreur lors du chargement des marqueurs.', true);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initialiserCarte);
+</script>
+{% endblock %}

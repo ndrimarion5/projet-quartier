@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion — Annuaire du Quartier</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="login-page">
+  <div class="login-overlay"></div>
+  <div class="login-card">
+    <div class="login-logo"></div>
+    <h1>Bienvenu</h1>
+    <h2>sur</h2>
+    <h3>Annuaire Statistique de Danga</h3>
+
+    <img class="login-avatar" src="{{ url_for('static', filename='images/user.svg') }}" alt="User">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="login-flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="/login">
+      <div class="login-form-group">
+        <label>Profil utilisateur</label>
+        <select name="role" required>
+          <option value="">Sélectionnez votre profil</option>
+          {% for p in profils %}
+          <option value="{{ p.username }}">{{ p.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="login-form-group">
+        <label>Mot de passe</label>
+        <div class="password-wrapper">
+          <input type="password" name="password" id="password"
+                 placeholder="Entrez votre mot de passe" required>
+        </div>
+      </div>
+      <div class="login-options">
+        <a href="{{ url_for('forgot_password') }}">Mot de passe oublié ?</a>
+      </div>
+      <button type="submit" class="btn-login">Se connecter</button>
+    </form>
+  </div>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

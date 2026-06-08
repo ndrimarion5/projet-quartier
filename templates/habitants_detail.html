@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}{{ habitant.prenom }} {{ habitant.nom }} — Annuaire du Quartier{% endblock %}
+
+{% block page_title %}Fiche habitant{% endblock %}
+
+{% block breadcrumb %}
+<div class="header-breadcrumb">
+  <a href="{{ url_for('dashboard') }}">Accueil</a>
+  <span class="sep">›</span>
+  <a href="{{ url_for('habitants_list') }}">Habitants</a>
+  <span class="sep">›</span>
+  <span>{{ habitant.prenom }} {{ habitant.nom }}</span>
+</div>
+{% endblock %}
+
+{% block header_actions %}
+<div class="d-flex gap-2">
+  {% if session.role in ['admin','agent'] %}
+  <a href="{{ url_for('habitant_edit', id=habitant.id_habitant) }}" class="btn btn-outline"><i class="fa-solid fa-pen"></i> Modifier</a>
+  {% endif %}
+  {% if session.role == 'admin' %}
+  <form method="POST" action="{{ url_for('habitant_delete', id=habitant.id_habitant) }}"
+        class="confirm-delete" data-name="{{ habitant.prenom }} {{ habitant.nom }}">
+    <button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash"></i> Supprimer</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="card mb-6">
+  <!-- En-tête coloré -->
+  <div class="detail-header">
+    <div class="detail-avatar">{{ habitant.prenom[0].upper() }}{{ habitant.nom[0].upper() }}</div>
+    <div>
+      <div class="detail-name">{{ habitant.prenom }} {{ habitant.nom }}</div>
+      <div class="detail-sub">
+        ID #{{ habitant.id_habitant }} &nbsp;·&nbsp;
+        {% if habitant.statut == 'actif' or not habitant.statut %}
+          <span style="color:#86efac;">● Actif</span>
+        {% elif habitant.statut == 'decede' %}
+          <span style="color:#fca5a5;">● Décédé</span>
+        {% elif habitant.statut == 'parti' %}
+          <span style="color:#fde68a;">● Parti</span>
+        {% endif %}
+        {% if age %}&nbsp;·&nbsp; {{ age }} ans{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-body">
+    <div class="info-grid">
+      <div class="info-item">
+        <label>Sexe</label>
+        <span>{{ habitant.sexe or '—' }}</span>
+      </div>
+      <div class="info-item">
+        <label>Date de naissance</label>
+        <span>{{ habitant.date_de_naissance.strftime('%d/%m/%Y') if habitant.date_de_naissance else '—' }}</span>
+      </div>
+      <div class="info-item">
+        <label>Âge</label>
+        <span>{{ age ~ ' ans' if age else '—' }}</span>
+      </div>
+      <div class="info-item">
+        <label>Profession</label>
+        <span>{{ habitant.profession or '—' }}</span>
+      </div>
+      <div class="info-item">
+        <label>Niveau d'étude</label>
+        <span>{{ habitant.niveau_etude or '—' }}</span>
+      </div>
+      <div class="info-item">
+        <label>Téléphone</label>
+        <span>{{ habitant.telephone or '—' }}</span>
+      </div>
+      <div class="info-item">
+        <label>Ménage</label>
+        <span>
+          {% if habitant.id_menage %}
+            <a href="{{ url_for('menage_detail', id=habitant.id_menage) }}" class="text-orange">
+              {{ habitant.adresse or 'Voir ménage →' }}
+            </a>
+          {% else %}—{% endif %}
+        </span>
+      </div>
+      <div class="info-item">
+        <label>Revenu ménage</label>
+        <span>{{ '{:,.0f} FCFA'.format(habitant.revenu) if habitant.revenu else '—' }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- Événements vitaux -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"> Événements vitaux</span>
+      {% if session.role in ['admin','agent'] %}
+      <a href="{{ url_for('evenement_add') }}" class="btn btn-primary btn-sm">＋ Ajouter</a>
+      {% endif %}
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Type</th><th>Date</th><th>Description</th></tr></thead>
+        <tbody>
+          {% for evt in evenements %}
+          <tr>
+            <td>
+              {% if evt.type_evenement == 'naissance' %}
+                <span class="badge badge-green">Naissance</span>
+              {% elif evt.type_evenement == 'deces' %}
+                <span class="badge badge-red">Décès</span>
+              {% else %}
+                <span class="badge badge-blue">{{ evt.type_evenement }}</span>
+              {% endif %}
+            </td>
+            <td class="text-sm">{{ evt.date_evenement.strftime('%d/%m/%Y') if evt.date_evenement else '—' }}</td>
+            <td class="text-muted text-sm">{{ evt.description or '—' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" class="table-empty">Aucun événement</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Mouvements résidentiels -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"> Mouvements résidentiels</span>
+      {% if session.role in ['admin','agent'] %}
+      <a href="{{ url_for('mouvement_add') }}" class="btn btn-primary btn-sm">＋ Ajouter</a>
+      {% endif %}
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Type</th><th>Date</th><th>Détail</th></tr></thead>
+        <tbody>
+          {% for mvt in mouvements %}
+          <tr>
+            <td>
+              {% if mvt.type_mouvement == 'arrivee' %}
+                <span class="badge badge-green">Arrivée</span>
+              {% else %}
+                <span class="badge badge-orange">Départ</span>
+              {% endif %}
+            </td>
+            <td class="text-sm">{{ mvt.date_mouvement.strftime('%d/%m/%Y') if mvt.date_mouvement else '—' }}</td>
+            <td class="text-muted text-sm">
+              {% if mvt.provenance %}De : {{ mvt.provenance }}{% endif %}
+              {% if mvt.destination %}Vers : {{ mvt.destination }}{% endif %}
+              {% if not mvt.provenance and not mvt.destination %}—{% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" class="table-empty">Aucun mouvement</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
