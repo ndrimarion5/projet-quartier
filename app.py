@@ -7,6 +7,7 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 import os
 import io
 import re
+import threading
 import unicodedata
 from datetime import date, datetime, timedelta
 from functools import wraps
@@ -90,6 +91,133 @@ def get_db():
     except Exception as e:
         print(f"Erreur de connexion DB: {e}")
         raise
+
+DB_INIT_STATE = {
+    "started": False,
+    "running": False,
+    "done": False,
+    "error": None,
+}
+DB_INIT_LOCK = threading.Lock()
+DB_INIT_SQL_FILE = pathlib.Path(__file__).parent / "creation_base_annuaire_danga_sans_alter.sql"
+DB_REQUIRED_TABLES = {
+    "menages",
+    "habitant",
+    "evenement_vital",
+    "mouvement_residuel",
+    "utilisateurs",
+    "historique_actions",
+}
+DB_INIT_ADVISORY_LOCK_ID = 907202606
+
+
+def _existing_app_tables(cur):
+    cur.execute("""
+        SELECT lower(table_name) AS table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+          AND lower(table_name) = ANY(%s)
+    """, (list(DB_REQUIRED_TABLES),))
+    return {row[0] for row in cur.fetchall()}
+
+
+def initialize_database_if_needed():
+    """Create the Render PostgreSQL schema once when the target database is empty."""
+    conn = None
+    cur = None
+    got_lock = False
+
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+
+        cur.execute("SELECT pg_advisory_lock(%s)", (DB_INIT_ADVISORY_LOCK_ID,))
+        got_lock = True
+
+        existing_tables = _existing_app_tables(cur)
+        if DB_REQUIRED_TABLES.issubset(existing_tables):
+            app.logger.info("Database schema already initialized.")
+            return
+
+        if existing_tables:
+            missing = ", ".join(sorted(DB_REQUIRED_TABLES - existing_tables))
+            present = ", ".join(sorted(existing_tables))
+            raise RuntimeError(
+                "Database schema is incomplete; automatic initialization was not run "
+                f"to avoid dropping existing data. Present tables: {present}. "
+                f"Missing tables: {missing}."
+            )
+
+        if not DB_INIT_SQL_FILE.exists():
+            raise FileNotFoundError(f"Initialization SQL file not found: {DB_INIT_SQL_FILE}")
+
+        app.logger.warning("Database is empty. Initializing schema from %s", DB_INIT_SQL_FILE)
+        sql_script = DB_INIT_SQL_FILE.read_text(encoding="utf-8")
+        cur.execute(sql_script)
+        conn.commit()
+        app.logger.info("Database schema initialized successfully.")
+
+    except Exception:
+        if conn:
+            conn.rollback()
+        app.logger.exception("Database initialization failed.")
+        raise
+    finally:
+        if cur:
+            if got_lock:
+                try:
+                    cur.execute("SELECT pg_advisory_unlock(%s)", (DB_INIT_ADVISORY_LOCK_ID,))
+                    if conn:
+                        conn.commit()
+                except Exception:
+                    app.logger.exception("Could not release database initialization lock.")
+            cur.close()
+        if conn:
+            conn.close()
+
+
+def start_database_initialization():
+    """Start schema initialization in a background thread for production hosts."""
+    with DB_INIT_LOCK:
+        if DB_INIT_STATE["started"]:
+            return
+        DB_INIT_STATE["started"] = True
+        DB_INIT_STATE["running"] = True
+
+    def run():
+        try:
+            initialize_database_if_needed()
+            DB_INIT_STATE["done"] = True
+        except Exception as exc:
+            DB_INIT_STATE["error"] = str(exc)
+        finally:
+            DB_INIT_STATE["running"] = False
+
+    thread = threading.Thread(target=run, name="db-schema-init", daemon=True)
+    thread.start()
+
+
+start_database_initialization()
+
+
+@app.before_request
+def guard_database_initialization():
+    if request.endpoint == "static":
+        return None
+    if DB_INIT_STATE["running"]:
+        return (
+            "Initialisation de la base de donnees en cours. Rechargez la page dans quelques secondes.",
+            503,
+            {"Retry-After": "5"},
+        )
+    if DB_INIT_STATE["error"]:
+        app.logger.error("Database initialization error: %s", DB_INIT_STATE["error"])
+        return (
+            "Initialisation de la base de donnees echouee. Consultez les logs Render.",
+            500,
+        )
+    return None
+
 
 # Enregistrement des actions dans l'historique
 def log_action(action, details=""):
