@@ -8,6 +8,7 @@ import os
 import io
 import re
 import threading
+import time
 import unicodedata
 from datetime import date, datetime, timedelta
 from functools import wraps
@@ -130,9 +131,21 @@ def initialize_database_if_needed():
     try:
         conn = get_db()
         cur = conn.cursor()
+        cur.execute("SET statement_timeout = '60s'")
 
-        cur.execute("SELECT pg_advisory_lock(%s)", (DB_INIT_ADVISORY_LOCK_ID,))
-        got_lock = True
+        lock_deadline = time.time() + 60
+        while not got_lock and time.time() < lock_deadline:
+            cur.execute("SELECT pg_try_advisory_lock(%s)", (DB_INIT_ADVISORY_LOCK_ID,))
+            got_lock = bool(cur.fetchone()[0])
+            if not got_lock:
+                existing_tables = _existing_app_tables(cur)
+                if DB_REQUIRED_TABLES.issubset(existing_tables):
+                    app.logger.info("Database schema initialized by another worker.")
+                    return
+                time.sleep(2)
+
+        if not got_lock:
+            raise TimeoutError("Could not acquire database initialization lock after 60 seconds.")
 
         existing_tables = _existing_app_tables(cur)
         if DB_REQUIRED_TABLES.issubset(existing_tables):
@@ -177,46 +190,24 @@ def initialize_database_if_needed():
 
 
 def start_database_initialization():
-    """Start schema initialization in a background thread for production hosts."""
+    """Initialize the schema during worker startup so requests are not stuck waiting."""
     with DB_INIT_LOCK:
         if DB_INIT_STATE["started"]:
             return
         DB_INIT_STATE["started"] = True
         DB_INIT_STATE["running"] = True
 
-    def run():
-        try:
-            initialize_database_if_needed()
-            DB_INIT_STATE["done"] = True
-        except Exception as exc:
-            DB_INIT_STATE["error"] = str(exc)
-        finally:
-            DB_INIT_STATE["running"] = False
-
-    thread = threading.Thread(target=run, name="db-schema-init", daemon=True)
-    thread.start()
+    try:
+        initialize_database_if_needed()
+        DB_INIT_STATE["done"] = True
+    except Exception as exc:
+        DB_INIT_STATE["error"] = str(exc)
+        raise
+    finally:
+        DB_INIT_STATE["running"] = False
 
 
 start_database_initialization()
-
-
-@app.before_request
-def guard_database_initialization():
-    if request.endpoint == "static":
-        return None
-    if DB_INIT_STATE["running"]:
-        return (
-            "Initialisation de la base de donnees en cours. Rechargez la page dans quelques secondes.",
-            503,
-            {"Retry-After": "5"},
-        )
-    if DB_INIT_STATE["error"]:
-        app.logger.error("Database initialization error: %s", DB_INIT_STATE["error"])
-        return (
-            "Initialisation de la base de donnees echouee. Consultez les logs Render.",
-            500,
-        )
-    return None
 
 
 # Enregistrement des actions dans l'historique
